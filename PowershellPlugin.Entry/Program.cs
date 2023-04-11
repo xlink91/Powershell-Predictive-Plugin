@@ -8,6 +8,7 @@ Console.WriteLine("Hello, World!");
 var p = new SamplePredictor();
 
 
+var pr = SamplePredictor._tree.GetPrefixPaths("docker p");
 var rs0 = SamplePredictor._tree.GetPrefixPaths("docker compo");
 var rs1 = SamplePredictor._tree.GetPrefixPaths("docker log");
 var rs2 = SamplePredictor._tree.GetPrefixPaths("kub ");

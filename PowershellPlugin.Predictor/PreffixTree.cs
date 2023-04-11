@@ -110,6 +110,10 @@ namespace PowershellPlugin.Predictor
                 oneBranch = node.Children.Count == 1;
                 node = node.Children.First().Value;
             }
+            if(node != null)
+            {
+                builder.Append(node.Value);
+            }
             text = builder.ToString().Substring(1);
             return oneBranch;
         }
