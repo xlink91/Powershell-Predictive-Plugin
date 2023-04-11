@@ -68,7 +68,6 @@ namespace PowershellPlugin.Predictor
             var r = _tree.GetPrefixPaths(input)
                                               .Select(x => new PredictiveSuggestion(x))
                                               .ToList();
-            r.Insert(0, new PredictiveSuggestion(input));
             return new SuggestionPackage(r);
         }
 
