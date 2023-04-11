@@ -10,7 +10,7 @@
 
   <ItemGroup>
     <None Update="Text\Kubernetes.txt">
-      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
     </None>
   </ItemGroup>
 </Project>

@@ -53,6 +53,9 @@ namespace PowershellPlugin.Predictor
                 if(current.ContainsChildren(c))
                 {
                     current = current.Children[c];
+                } else
+                {
+                    return Array.Empty<string>();
                 }
             }
             if(current == _root)
@@ -79,12 +82,12 @@ namespace PowershellPlugin.Predictor
                 {
                     var cp = new StringBuilder(prevText.Length);
                     cp.Append(prevText);
-                    cp.Append(k);
                     if(IsThereOnlyOneBranch(nd, out string branch))
                     {
                         qt.Enqueue((cp.Append(branch), v, true));
                     } else
                     {
+                        cp.Append(k);
                         qt.Enqueue((cp, v, nd.IsWord));
                     }
                 }
