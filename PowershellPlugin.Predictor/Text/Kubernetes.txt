@@ -1,0 +1,60 @@
+﻿kubectl config view
+kubectl config view -o jsonpath='{.users[?(@.name == "e2e")].user.password}'
+kubectl config view -o jsonpath='{.users[].name}'    # display the first user
+kubectl config view -o jsonpath='{.users[*].name}'   # get a list of users
+kubectl config get-contexts                          # display list of contexts
+kubectl config current-context                       # display the current-context
+kubectl config use-context my-cluster-name           # set the default context to my-cluster-name
+kubectl config set-cluster my-cluster-name           # set a cluster entry in the kubeconfig
+kubectl config set-cluster my-cluster-name --proxy-url=my-proxy-url
+kubectl config set-credentials kubeuser/foo.kubernetes.com --username=kubeuser --password=kubepassword
+kubectl config set-context --current --namespace=ggckad-s2
+kubectl config set-context gce --user=cluster-admin --namespace=foo && kubectl config use-context gce
+kubectl config unset users.foo                       # delete user foo
+kubectl apply -f ./my-manifest.yaml            # create resource(s)
+kubectl apply -f ./my1.yaml -f ./my2.yaml      # create from multiple files
+kubectl apply -f ./dir                         # create resource(s) in all manifest files in dir
+kubectl apply -f https://git.io/vPieo          # create resource(s) from url
+kubectl create deployment nginx --image=nginx  # start a single instance of nginx
+kubectl create job hello --image=busybox:1.28 -- echo "Hello World"
+kubectl get services                          # List all services in the namespace
+kubectl get pods --all-namespaces             # List all pods in all namespaces
+kubectl get pods -o wide                      # List all pods in the current namespace, with more details
+kubectl get deployment my-dep                 # List a particular deployment
+kubectl get pods                              # List all pods in the namespace
+kubectl get pod my-pod -o yaml                # Get a pod's YAML
+kubectl describe nodes my-node
+kubectl describe pods my-pod
+kubectl get services --sort-by=.metadata.name
+kubectl get pods --sort-by='.status.containerStatuses[0].restartCount'
+kubectl get pv --sort-by=.spec.capacity.storage
+kubectl get pods --selector=app=cassandra -o jsonpath='{.items[*].metadata.labels.version}'
+kubectl get configmap myconfig -o jsonpath='{.data.ca\.crt}'
+kubectl get secret my-secret --template='{{index .data "key-name-with-dashes"}}'
+kubectl get node --selector='!node-role.kubernetes.io/control-plane'
+kubectl get pods --field-selector=status.phase=Running
+kubectl get nodes -o jsonpath='{.items[*].status.addresses[?(@.type=="ExternalIP")].address}'
+kubectl get pods --selector=$sel --output=jsonpath={.items..metadata.name}
+kubectl get pods --show-labels
+kubectl get secret my-secret -o go-template='{{range $k,$v := .data}}{{"### "}}{{$k}}{{"\n"}}{{$v|base64decode}}{{"\n\n"}}{{end}}'
+kubectl get pods --all-namespaces -o jsonpath='{range .items[*].status.initContainerStatuses[*]}{.containerID}{"\n"}{end}' | cut -d/ -f3
+kubectl get events --sort-by=.metadata.creationTimestamp
+kubectl events --types=Warning
+kubectl diff -f ./my-manifest.yaml
+kubectl get nodes -o json | jq -c 'paths|join(".")'
+kubectl get pods -o json | jq -c 'paths|join(".")'
+for pod in $(kubectl get po --output=jsonpath={.items..metadata.name}); do echo $pod && kubectl exec -it $pod -- env; done
+kubectl get deployment nginx-deployment --subresource=status
+kubectl set image deployment/frontend www=image:v2               # Rolling update "www" containers of "frontend" deployment, updating the image
+kubectl rollout history deployment/frontend                      # Check the history of deployments including the revision
+kubectl rollout undo deployment/frontend                         # Rollback to the previous deployment
+kubectl rollout undo deployment/frontend --to-revision=2         # Rollback to a specific revision
+kubectl rollout status -w deployment/frontend                    # Watch rolling update status of "frontend" deployment until completion
+kubectl rollout restart deployment/frontend                      # Rolling restart of the "frontend" deployment
+kubectl replace --force -f ./pod.json
+kubectl expose rc nginx --port=80 --target-port=8000
+kubectl get pod mypod -o yaml | sed 's/\(image: myimage\):.*$/\1:v4/' | kubectl replace -f -
+kubectl label pods my-pod new-label=awesome                      # Add a Label
+kubectl label pods my-pod new-label-                             # Remove a label
+kubectl annotate pods my-pod icon-url=http://goo.gl/XXBTWq       # Add an annotation
+kubectl autoscale deployment foo --min=2 --max=10                # Auto scale a deployment "foo"
