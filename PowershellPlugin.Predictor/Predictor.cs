@@ -6,6 +6,7 @@ using System.Management.Automation;
 using System.Management.Automation.Subsystem;
 using System.Management.Automation.Subsystem.Prediction;
 using System.Text;
+using System.Text.RegularExpressions;
 using System.Threading;
 using System.Threading.Tasks;
 
@@ -13,25 +14,22 @@ namespace PowershellPlugin.Predictor
 {
      public class SamplePredictor : ICommandPredictor
      {
-        public static PreffixTree _tree;
+        private static PreffixTree _tree;
+        private static PreffixTree _afterPipe;
         private readonly Guid _guid;
         private readonly static object _objLock = new object();
 
         public SamplePredictor()
         {
-            if(_tree == null)
+            _tree = new PreffixTree();
+            _afterPipe = new PreffixTree();
+            string environmentVariable = Environment.GetEnvironmentVariable("PLUGIN_POWERSHELL_PREDICTIVE");
+            if (environmentVariable == null)
             {
-                lock (_objLock)
-                {
-                    _tree = new PreffixTree();
-                    var path = Environment.GetEnvironmentVariable("PLUGIN_POWERSHELL_PREDICTIVE");
-                    if(path == null)
-                    {
-                        throw new ArgumentException("Environment variable PLUGIN_POWERSHELL_PREDICTIVE with path value not set.");
-                    }
-                    _tree.Load(Path.Combine(path, "Text"));
-                }
+              throw new ArgumentException("Environment variable PLUGIN_POWERSHELL_PREDICTIVE with path value not set.");
             }
+            _tree.Load(Path.Combine(environmentVariable, "Text"), "*.txt");
+            _afterPipe.Load(Path.Combine(environmentVariable, "Text"), "*.pipe");
         }
 
         internal SamplePredictor(string guid) 
@@ -65,10 +63,22 @@ namespace PowershellPlugin.Predictor
         public SuggestionPackage GetSuggestion(PredictionClient client, PredictionContext context, CancellationToken cancellationToken)
         {
             string input = context.InputAst.Extent.Text;
+            string pipePattern = @".+(?:\s+\|\s+([^\s^\|]+))+\s*";
+            if (Regex.IsMatch(input, pipePattern))
+            {
+                var match = Regex.Match(input, pipePattern, RegexOptions.RightToLeft);
+                Group afterPipeGroup = match.Groups[1];
+                var afterPipeText = afterPipeGroup.Captures[0].Value;
+                var index = afterPipeGroup.Captures[0].Index;
+                var rs = _afterPipe.GetPrefixPaths(afterPipeText)
+                                                       .Select(x => new PredictiveSuggestion(string.Concat(input.AsSpan(0, index), x)))
+                                                       .ToList();
+                return rs.Any() ? new SuggestionPackage(rs) : default;
+            }
             var r = _tree.GetPrefixPaths(input)
                                               .Select(x => new PredictiveSuggestion(x))
                                               .ToList();
-            return new SuggestionPackage(r);
+            return r.Any() ? new SuggestionPackage(r) : default;
         }
 
         #region "interface methods for processing feedback"

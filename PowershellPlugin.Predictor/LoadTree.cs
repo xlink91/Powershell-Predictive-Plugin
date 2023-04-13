@@ -2,9 +2,9 @@
 {
     public static class LoadTree
     {
-        public static void Load(this PreffixTree tree, string path)
+        public static void Load(this PreffixTree tree, string path, string pattern)
         {
-            var files = System.IO.Directory.GetFiles(path);
+            var files = System.IO.Directory.GetFiles(path, pattern);
             foreach (var file in files)
             {
                 var lines = System.IO.File.ReadAllLines(file);
