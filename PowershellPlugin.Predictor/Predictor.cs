@@ -17,6 +17,7 @@ namespace PowershellPlugin.Predictor
         private static PreffixTree _tree;
         private static PreffixTree _afterPipe;
         private readonly Guid _guid;
+        private readonly string pipePattern = @".+(?:\s*\|\s*(?:([^\|]+)*))+\s*";
         private readonly static object _objLock = new object();
 
         public SamplePredictor()
@@ -63,22 +64,39 @@ namespace PowershellPlugin.Predictor
         public SuggestionPackage GetSuggestion(PredictionClient client, PredictionContext context, CancellationToken cancellationToken)
         {
             string input = context.InputAst.Extent.Text;
-            string pipePattern = @".+(?:\s+\|\s+([^\s^\|]+))+\s*";
+            input = Regex.Replace(input, @"\s+", " ");
             if (Regex.IsMatch(input, pipePattern))
             {
-                var match = Regex.Match(input, pipePattern, RegexOptions.RightToLeft);
-                Group afterPipeGroup = match.Groups[1];
-                var afterPipeText = afterPipeGroup.Captures[0].Value;
-                var index = afterPipeGroup.Captures[0].Index;
-                var rs = _afterPipe.GetPrefixPaths(afterPipeText)
-                                                       .Select(x => new PredictiveSuggestion(string.Concat(input.AsSpan(0, index), x)))
-                                                       .ToList();
+                var rs = GetPredictionForAfterPipe(input);
                 return rs.Any() ? new SuggestionPackage(rs) : default;
             }
-            var r = _tree.GetPrefixPaths(input)
+            var r = _tree.GetPreffixPaths(input)
                                               .Select(x => new PredictiveSuggestion(x))
                                               .ToList();
             return r.Any() ? new SuggestionPackage(r) : default;
+        }
+
+        public List<PredictiveSuggestion> GetPredictionForAfterPipe(string text)
+        {
+            var match = Regex.Match(text, pipePattern, RegexOptions.RightToLeft);
+            Group afterPipeGroup = match.Groups[1];
+            var afterPipeText = afterPipeGroup.Captures.Any() ? afterPipeGroup.Captures[0].Value : string.Empty;
+            var index = afterPipeGroup.Captures.Any() ? afterPipeGroup.Captures[0].Index : text.Length;
+            if(!char.IsWhiteSpace(text[index - 1]))
+            {
+                ++index;
+                text += " ";
+            }
+            if(string.IsNullOrWhiteSpace(afterPipeText))
+            {
+                return _afterPipe.GetPredictionForEmptyLine()
+                                                   .Select(x => new PredictiveSuggestion(string.Concat(text.AsSpan(0, index), x)))
+                                                   .ToList();
+            }
+            afterPipeText = afterPipeText.Trim();
+            return _afterPipe.GetPreffixPaths(afterPipeText)
+                                                   .Select(x => new PredictiveSuggestion(string.Concat(text.AsSpan(0, index), x)))
+                                                   .ToList();
         }
 
         #region "interface methods for processing feedback"

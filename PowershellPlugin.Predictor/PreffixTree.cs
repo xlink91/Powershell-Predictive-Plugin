@@ -38,10 +38,14 @@ namespace PowershellPlugin.Predictor
         /// </summary>
         /// <param name="text"></param>
         /// <returns></returns>
-        public string[] GetPrefixPaths(string text)
+        public string[] GetPreffixPaths(string text)
         {
-            var sanitizedText = Regex.Replace(text, @"\s+", " ");
-            return GetSuffixPaths(sanitizedText);
+            return GetSuffixPaths(text);
+        }
+
+        public string[] GetPredictionForEmptyLine()
+        {
+             return GetWords(_root, 25);
         }
 
         private string[] GetSuffixPaths(string text)
@@ -65,12 +69,12 @@ namespace PowershellPlugin.Predictor
             return GetWords(current).Select(x => text + x).ToArray();
         }
 
-        private string[] GetWords(Node node)
+        private string[] GetWords(Node node, int maxSize = 100)
         {
             var wordList = new List<string>();
             var qt = new Queue<(StringBuilder, Node, bool final)>();
             qt.Enqueue((new StringBuilder(), node, false));
-            while(qt.Count > 0)
+            while(qt.Count > 0 && wordList.Count < maxSize)
             {
                 var (prevText, nd, final) = qt.Dequeue();
                 if(final)
